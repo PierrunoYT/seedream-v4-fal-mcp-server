@@ -17,6 +17,11 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
 import { fal } from "@fal-ai/client";
+import * as fs from 'fs';
+import * as path from 'path';
+import * as https from 'https';
+import * as http from 'http';
+import { URL } from 'url';
 // Get FAL API key from environment variable
 const FAL_KEY = process.env.FAL_KEY;
 if (!FAL_KEY) {
@@ -31,6 +36,52 @@ fal.config({
 const VALID_ASPECT_RATIOS = [
     "1:1", "3:4", "4:3", "16:9", "9:16", "2:3", "3:2", "21:9"
 ];
+/**
+ * Download an image from a URL and save it locally
+ */
+async function downloadImage(url, filename) {
+    return new Promise((resolve, reject) => {
+        const parsedUrl = new URL(url);
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+        // Create images directory if it doesn't exist
+        const imagesDir = path.join(process.cwd(), 'images');
+        if (!fs.existsSync(imagesDir)) {
+            fs.mkdirSync(imagesDir, { recursive: true });
+        }
+        const filePath = path.join(imagesDir, filename);
+        const file = fs.createWriteStream(filePath);
+        client.get(url, (response) => {
+            if (response.statusCode !== 200) {
+                reject(new Error(`Failed to download image: ${response.statusCode}`));
+                return;
+            }
+            response.pipe(file);
+            file.on('finish', () => {
+                file.close();
+                resolve(filePath);
+            });
+            file.on('error', (err) => {
+                fs.unlink(filePath, () => { }); // Delete the file on error
+                reject(err);
+            });
+        }).on('error', (err) => {
+            reject(err);
+        });
+    });
+}
+/**
+ * Generate a unique filename for an image
+ */
+function generateImageFilename(prompt, index, seed) {
+    // Create a safe filename from the prompt
+    const safePrompt = prompt
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, '_')
+        .substring(0, 50);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    return `seedream_${safePrompt}_${seed}_${index}_${timestamp}.png`;
+}
 /**
  * Create an MCP server with image generation capabilities
  */
@@ -163,11 +214,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (!response.images || response.images.length === 0) {
                     throw new Error("No images were generated");
                 }
-                // Format the response
-                const imageDescriptions = response.images.map((img, index) => {
-                    const dimensions = img.width && img.height ? ` (${img.width}x${img.height})` : '';
-                    return `Image ${index + 1}${dimensions}: ${img.url}`;
-                }).join('\n');
+                // Download images locally
+                console.error("Downloading images locally...");
+                const downloadedImages = [];
+                for (let i = 0; i < response.images.length; i++) {
+                    const img = response.images[i];
+                    const filename = generateImageFilename(params.prompt, i + 1, response.seed);
+                    try {
+                        const localPath = await downloadImage(img.url, filename);
+                        const dimensions = img.width && img.height ? ` (${img.width}x${img.height})` : '';
+                        downloadedImages.push({
+                            url: img.url,
+                            localPath,
+                            dimensions
+                        });
+                        console.error(`Downloaded: ${filename}`);
+                    }
+                    catch (downloadError) {
+                        console.error(`Failed to download image ${i + 1}:`, downloadError);
+                        // Still include the original URL if download fails
+                        downloadedImages.push({
+                            url: img.url,
+                            localPath: `Failed to download: ${downloadError instanceof Error ? downloadError.message : 'Unknown error'}`,
+                            dimensions: img.width && img.height ? ` (${img.width}x${img.height})` : ''
+                        });
+                    }
+                }
+                // Format the response with local paths
+                const imageDescriptions = downloadedImages.map((img, index) => {
+                    return `Image ${index + 1}${img.dimensions}:
+  Local Path: ${img.localPath}
+  Original URL: ${img.url}`;
+                }).join('\n\n');
                 return {
                     content: [
                         {
@@ -182,7 +260,7 @@ Seed Used: ${response.seed}
 Generated Images:
 ${imageDescriptions}
 
-You can view and download the images using the URLs above. The images are hosted on FAL's CDN and will be available for download.`
+Images have been downloaded to the local 'images' directory. You can find them at the local paths listed above.`
                         }
                     ]
                 };
@@ -258,13 +336,29 @@ Settings:
 `;
                 if (successful.length > 0) {
                     responseText += "Successfully Generated Images:\n";
-                    successful.forEach((item, index) => {
-                        responseText += `\n${index + 1}. Prompt: "${item.prompt}"\n`;
+                    // Download all images from successful generations
+                    for (let i = 0; i < successful.length; i++) {
+                        const item = successful[i];
+                        responseText += `\n${i + 1}. Prompt: "${item.prompt}"\n`;
                         responseText += `   Seed: ${item.seed}\n`;
-                        item.images.forEach((img, imgIndex) => {
-                            responseText += `   Image ${imgIndex + 1}: ${img.url}\n`;
-                        });
-                    });
+                        for (let imgIndex = 0; imgIndex < item.images.length; imgIndex++) {
+                            const img = item.images[imgIndex];
+                            const filename = generateImageFilename(item.prompt, imgIndex + 1, item.seed);
+                            try {
+                                const localPath = await downloadImage(img.url, filename);
+                                responseText += `   Image ${imgIndex + 1}:\n`;
+                                responseText += `     Local Path: ${localPath}\n`;
+                                responseText += `     Original URL: ${img.url}\n`;
+                                console.error(`Downloaded batch image: ${filename}`);
+                            }
+                            catch (downloadError) {
+                                responseText += `   Image ${imgIndex + 1}:\n`;
+                                responseText += `     Download Failed: ${downloadError instanceof Error ? downloadError.message : 'Unknown error'}\n`;
+                                responseText += `     Original URL: ${img.url}\n`;
+                                console.error(`Failed to download batch image ${imgIndex + 1}:`, downloadError);
+                            }
+                        }
+                    }
                 }
                 if (failed.length > 0) {
                     responseText += "\nFailed Generations:\n";
