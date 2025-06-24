@@ -30,15 +30,19 @@ import { URL } from 'url';
 
 // Get FAL API key from environment variable
 const FAL_KEY = process.env.FAL_KEY;
+let falClient: typeof fal | null = null;
+
 if (!FAL_KEY) {
   console.error("Error: FAL_KEY environment variable is required");
-  process.exit(1);
+  console.error("Please set your FAL API key: export FAL_KEY=your_fal_key_here");
+  // Server continues running, no process.exit()
+} else {
+  // Configure FAL client
+  fal.config({
+    credentials: FAL_KEY
+  });
+  falClient = fal;
 }
-
-// Configure FAL client
-fal.config({
-  credentials: FAL_KEY
-});
 
 // Valid aspect ratios for SeedDream 3.0
 const VALID_ASPECT_RATIOS = [
@@ -229,6 +233,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
     case "generate_image": {
       try {
+        if (!falClient) {
+          return {
+            content: [{
+              type: "text",
+              text: "Error: FAL_KEY environment variable is not set. Please configure your FAL API key."
+            }],
+            isError: true
+          };
+        }
+
         const params = (request.params.arguments || {}) as unknown as SeedDreamParams;
         
         if (!params.prompt || typeof params.prompt !== 'string') {
@@ -255,7 +269,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         console.error(`Generating image with prompt: "${params.prompt}"`);
         
         // Call the SeedDream 3.0 API
-        const result = await fal.subscribe("fal-ai/bytedance/seedream/v3/text-to-image", {
+        const result = await falClient.subscribe("fal-ai/bytedance/seedream/v3/text-to-image", {
           input: payload,
           logs: true,
           onQueueUpdate: (update) => {
@@ -341,6 +355,16 @@ Images have been downloaded to the local 'images' directory. You can find them a
 
     case "generate_image_batch": {
       try {
+        if (!falClient) {
+          return {
+            content: [{
+              type: "text",
+              text: "Error: FAL_KEY environment variable is not set. Please configure your FAL API key."
+            }],
+            isError: true
+          };
+        }
+
         const { prompts, aspect_ratio = "1:1", guidance_scale = 2.5 } = request.params.arguments as {
           prompts: string[];
           aspect_ratio?: AspectRatio;
@@ -367,7 +391,7 @@ Images have been downloaded to the local 'images' directory. You can find them a
           prompts.map(async (prompt, index) => {
             console.error(`Generating image ${index + 1}/${prompts.length}: "${prompt}"`);
             
-            const result = await fal.subscribe("fal-ai/bytedance/seedream/v3/text-to-image", {
+            const result = await falClient.subscribe("fal-ai/bytedance/seedream/v3/text-to-image", {
               input: {
                 prompt,
                 aspect_ratio,
@@ -484,6 +508,17 @@ async function main() {
   await server.connect(transport);
   console.error("SeedDream 3.0 FAL MCP server running on stdio");
 }
+
+// Graceful shutdown handlers
+process.on('SIGINT', () => {
+  console.error('Received SIGINT, shutting down gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.error('Received SIGTERM, shutting down gracefully...');
+  process.exit(0);
+});
 
 main().catch((error) => {
   console.error("Server error:", error);

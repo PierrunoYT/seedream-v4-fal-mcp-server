@@ -4,9 +4,7 @@
   "description": "MCP server for generating images using Bytedance's SeedDream 3.0 model via FAL AI",
   "private": true,
   "type": "module",
-  "bin": {
-    "seedream-fal-server": "./build/index.js"
-  },
+  "bin": "./build/index.js",
   "files": [
     "build"
   ],
