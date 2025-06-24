@@ -42,25 +42,11 @@ Generate multiple images with different prompts in a single request.
    - Navigate to your dashboard and generate an API key
    - Keep this key secure as you'll need it for configuration
 
-### Setup
+2. **Node.js**: Ensure you have Node.js installed (version 16 or higher)
 
-1. **Clone or download this repository**
-   ```bash
-   git clone <repository-url>
-   cd seedream-fal-server
-   ```
+### Quick Setup (Recommended)
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Build the server**
-   ```bash
-   npm run build
-   ```
-
-### Configuration
+The easiest way to use this server is through npx, which automatically downloads and runs the latest version:
 
 #### For Claude Desktop App
 
@@ -73,8 +59,11 @@ Add the server to your Claude Desktop configuration file:
 {
   "mcpServers": {
     "seedream": {
-      "command": "node",
-      "args": ["/absolute/path/to/seedream-fal-server/build/index.js"],
+      "command": "npx",
+      "args": [
+        "-y",
+        "https://github.com/PierrunoYT/seedream-v3-fal-mcp-server.git"
+      ],
       "env": {
         "FAL_KEY": "your-fal-api-key-here"
       }
@@ -92,43 +81,68 @@ Add to your MCP settings file at:
 {
   "mcpServers": {
     "seedream": {
-      "command": "node",
-      "args": ["/absolute/path/to/seedream-fal-server/build/index.js"],
+      "command": "npx",
+      "args": [
+        "-y",
+        "https://github.com/PierrunoYT/seedream-v3-fal-mcp-server.git"
+      ],
       "env": {
         "FAL_KEY": "your-fal-api-key-here"
-      }
+      },
+      "disabled": false,
+      "alwaysAllow": []
     }
   }
 }
 ```
 
-**Important**: Replace `/absolute/path/to/seedream-fal-server` with the actual absolute path to your seedream-fal-server directory.
+### Benefits of npx Configuration
 
-#### Finding the Absolute Path
+✅ **Universal Access**: Works on any machine with Node.js
+✅ **No Local Installation**: npx downloads and runs automatically
+✅ **Always Latest Version**: Pulls from GitHub repository
+✅ **Cross-Platform**: Windows, macOS, Linux compatible
+✅ **Settings Sync**: Works everywhere you use your MCP client
 
-**Windows:**
-1. Open the seedream-fal-server folder in File Explorer
-2. Click on the address bar at the top
-3. Copy the full path (e.g., `C:\Users\YourName\Projects\seedream-fal-server`)
-4. Use forward slashes in the config: `C:/Users/YourName/Projects/seedream-fal-server/build/index.js`
+### Manual Installation (Alternative)
 
-**macOS/Linux:**
-1. Open Terminal and navigate to the seedream-fal-server directory
-2. Run: `pwd` to get the current directory path
-3. The full path will be something like: `/Users/YourName/Projects/seedream-fal-server`
-4. Use: `/Users/YourName/Projects/seedream-fal-server/build/index.js`
+If you prefer to install locally:
 
-**Alternative method (any OS):**
-1. Open the seedream-fal-server folder in VS Code
-2. Right-click on the `build/index.js` file
-3. Select "Copy Path" or "Copy Absolute Path"
-4. Use this path in your configuration
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/PierrunoYT/seedream-v3-fal-mcp-server.git
+   cd seedream-v3-fal-mcp-server
+   ```
 
-**Easiest method - Use the helper script:**
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Build the server**
+   ```bash
+   npm run build
+   ```
+
+4. **Use absolute path in configuration**
+   ```json
+   {
+     "mcpServers": {
+       "seedream": {
+         "command": "node",
+         "args": ["/absolute/path/to/seedream-v3-fal-mcp-server/build/index.js"],
+         "env": {
+           "FAL_KEY": "your-fal-api-key-here"
+         }
+       }
+     }
+   }
+   ```
+
+**Helper script to get the absolute path:**
 ```bash
 npm run get-path
 ```
-This will automatically display the correct absolute path and show you an example configuration with the path already filled in.
 
 ## Usage Examples
 
@@ -202,12 +216,15 @@ npm run inspector
 
 ### Common Issues
 
-1. **"FAL_KEY environment variable is required"**
+1. **"FAL_KEY environment variable is not set"**
+   - The server will continue running and show this helpful error message
    - Ensure your FAL API key is properly set in the MCP configuration
    - Verify the key is valid and has sufficient credits
+   - **Note**: The server no longer crashes when the API key is missing
 
 2. **"Server not showing up in Claude"**
-   - Check that the absolute path in the configuration is correct
+   - If using npx configuration, ensure you have Node.js installed
+   - For manual installation, check that the absolute path is correct
    - Restart Claude Desktop after configuration changes
    - Verify the JSON configuration syntax is valid
 
@@ -216,12 +233,24 @@ npm run inspector
    - Verify your API key has the necessary permissions
    - Try with a simpler prompt to test connectivity
 
+4. **"npx command not found"**
+   - Ensure Node.js is properly installed
+   - Try running `node --version` and `npm --version` to verify installation
+
+### Server Stability Improvements
+
+✅ **Robust Error Handling**: Server continues running even without API token
+✅ **Graceful Shutdown**: Proper handling of SIGINT and SIGTERM signals
+✅ **User-Friendly Messages**: Clear error messages with setup instructions
+✅ **No More Crashes**: Eliminated `process.exit()` calls that caused connection drops
+
 ### Debug Logging
 
 The server outputs debug information to stderr, which can help diagnose issues:
 - Generation progress updates
-- Error messages
+- Error messages with helpful instructions
 - API call details
+- Graceful shutdown notifications
 
 ## Pricing
 
@@ -247,6 +276,14 @@ For issues related to:
 - **SeedDream 3.0 model**: Refer to FAL AI documentation
 
 ## Changelog
+
+### v0.1.1 (Latest)
+- **🔧 Fixed connection drops**: Removed `process.exit()` calls that caused server crashes
+- **🛡️ Improved error handling**: Server continues running even without API token
+- **🌍 Added portability**: npx configuration works on any machine
+- **📦 Enhanced stability**: Graceful shutdown handlers and null safety checks
+- **💬 Better user experience**: Clear error messages with setup instructions
+- **🔄 Auto-updating**: npx pulls latest version from GitHub automatically
 
 ### v0.1.0
 - Initial release
