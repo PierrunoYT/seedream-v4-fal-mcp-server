@@ -1,0 +1,49 @@
+{
+  "name": "seedream-server",
+  "version": "0.1.0",
+  "description": "MCP server for generating images using Bytedance's SeedDream 3.0 model via FAL AI",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "seedream-server": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "test": "node test-server.js",
+    "get-path": "node get-path.js",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "image-generation",
+    "seedream",
+    "bytedance",
+    "fal-ai",
+    "ai",
+    "text-to-image"
+  ],
+  "author": "SeedDream MCP Server",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PierrunoYT/seedream-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PierrunoYT/seedream-mcp-server/issues"
+  },
+  "homepage": "https://github.com/PierrunoYT/seedream-mcp-server#readme",
+  "dependencies": {
+    "@fal-ai/client": "^1.5.0",
+    "@modelcontextprotocol/sdk": "0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  }
+}
