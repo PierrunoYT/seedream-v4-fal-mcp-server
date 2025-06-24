@@ -1,11 +1,11 @@
 {
-  "name": "seedream-server",
+  "name": "seedream-fal-server",
   "version": "0.1.0",
   "description": "MCP server for generating images using Bytedance's SeedDream 3.0 model via FAL AI",
   "private": true,
   "type": "module",
   "bin": {
-    "seedream-server": "./build/index.js"
+    "seedream-fal-server": "./build/index.js"
   },
   "files": [
     "build"
@@ -32,12 +32,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/PierrunoYT/seedream-mcp-server.git"
+    "url": "https://github.com/PierrunoYT/seedream-v3-fal-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/PierrunoYT/seedream-mcp-server/issues"
+    "url": "https://github.com/PierrunoYT/seedream-v3-fal-mcp-server/issues"
   },
-  "homepage": "https://github.com/PierrunoYT/seedream-mcp-server#readme",
+  "homepage": "https://github.com/PierrunoYT/seedream-v3-fal-mcp-server#readme",
   "dependencies": {
     "@fal-ai/client": "^1.5.0",
     "@modelcontextprotocol/sdk": "0.6.0"

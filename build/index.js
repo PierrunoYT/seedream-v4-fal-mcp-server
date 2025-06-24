@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SeedDream 3.0 MCP Server
+ * SeedDream 3.0 FAL MCP Server
  *
  * This MCP server provides image generation capabilities using Bytedance's SeedDream 3.0 model
  * via the FAL AI platform. SeedDream 3.0 is a bilingual (Chinese and English) text-to-image
@@ -35,7 +35,7 @@ const VALID_ASPECT_RATIOS = [
  * Create an MCP server with image generation capabilities
  */
 const server = new Server({
-    name: "seedream-server",
+    name: "seedream-fal-server",
     version: "0.1.0",
 }, {
     capabilities: {
@@ -305,7 +305,7 @@ Settings:
 async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error("SeedDream 3.0 MCP server running on stdio");
+    console.error("SeedDream 3.0 FAL MCP server running on stdio");
 }
 main().catch((error) => {
     console.error("Server error:", error);

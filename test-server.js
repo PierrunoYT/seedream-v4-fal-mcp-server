@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Simple test script for the SeedDream 3.0 MCP Server
+ * Simple test script for the SeedDream 3.0 FAL MCP Server
  * This script helps verify that the server is working correctly
  */
 
@@ -39,7 +39,7 @@ const testMessages = [
 ];
 
 async function testServer() {
-  console.log('Testing SeedDream 3.0 MCP Server...\n');
+  console.log('Testing SeedDream 3.0 FAL MCP Server...\n');
 
   // Check if build exists
   const serverPath = join(__dirname, 'build', 'index.js');

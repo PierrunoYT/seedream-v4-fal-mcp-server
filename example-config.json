@@ -1,14 +1,14 @@
 {
-  "_comment": "Replace the path below with your actual absolute path to seedream-server/build/index.js",
+  "_comment": "Replace the path below with your actual absolute path to seedream-fal-server/build/index.js",
   "_instructions": {
-    "Windows": "Use forward slashes like: C:/Users/YourName/Projects/seedream-server/build/index.js",
-    "macOS_Linux": "Use: /Users/YourName/Projects/seedream-server/build/index.js",
+    "Windows": "Use forward slashes like: C:/Users/YourName/Projects/seedream-fal-server/build/index.js",
+    "macOS_Linux": "Use: /Users/YourName/Projects/seedream-fal-server/build/index.js",
     "find_path": "Right-click build/index.js in VS Code and select 'Copy Path'"
   },
   "mcpServers": {
     "seedream": {
       "command": "node",
-      "args": ["/absolute/path/to/seedream-server/build/index.js"],
+      "args": ["/absolute/path/to/seedream-fal-server/build/index.js"],
       "env": {
         "FAL_KEY": "your-fal-api-key-here"
       },

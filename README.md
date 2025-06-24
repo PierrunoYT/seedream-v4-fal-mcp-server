@@ -1,4 +1,4 @@
-# SeedDream 3.0 MCP Server
+# SeedDream 3.0 FAL MCP Server
 
 A Model Context Protocol (MCP) server that provides image generation capabilities using Bytedance's SeedDream 3.0 model via the FAL AI platform.
 
@@ -47,7 +47,7 @@ Generate multiple images with different prompts in a single request.
 1. **Clone or download this repository**
    ```bash
    git clone <repository-url>
-   cd seedream-server
+   cd seedream-fal-server
    ```
 
 2. **Install dependencies**
@@ -74,7 +74,7 @@ Add the server to your Claude Desktop configuration file:
   "mcpServers": {
     "seedream": {
       "command": "node",
-      "args": ["/absolute/path/to/seedream-server/build/index.js"],
+      "args": ["/absolute/path/to/seedream-fal-server/build/index.js"],
       "env": {
         "FAL_KEY": "your-fal-api-key-here"
       }
@@ -93,7 +93,7 @@ Add to your MCP settings file at:
   "mcpServers": {
     "seedream": {
       "command": "node",
-      "args": ["/absolute/path/to/seedream-server/build/index.js"],
+      "args": ["/absolute/path/to/seedream-fal-server/build/index.js"],
       "env": {
         "FAL_KEY": "your-fal-api-key-here"
       }
@@ -102,24 +102,24 @@ Add to your MCP settings file at:
 }
 ```
 
-**Important**: Replace `/absolute/path/to/seedream-server` with the actual absolute path to your seedream-server directory.
+**Important**: Replace `/absolute/path/to/seedream-fal-server` with the actual absolute path to your seedream-fal-server directory.
 
 #### Finding the Absolute Path
 
 **Windows:**
-1. Open the seedream-server folder in File Explorer
+1. Open the seedream-fal-server folder in File Explorer
 2. Click on the address bar at the top
-3. Copy the full path (e.g., `C:\Users\YourName\Projects\seedream-server`)
-4. Use forward slashes in the config: `C:/Users/YourName/Projects/seedream-server/build/index.js`
+3. Copy the full path (e.g., `C:\Users\YourName\Projects\seedream-fal-server`)
+4. Use forward slashes in the config: `C:/Users/YourName/Projects/seedream-fal-server/build/index.js`
 
 **macOS/Linux:**
-1. Open Terminal and navigate to the seedream-server directory
+1. Open Terminal and navigate to the seedream-fal-server directory
 2. Run: `pwd` to get the current directory path
-3. The full path will be something like: `/Users/YourName/Projects/seedream-server`
-4. Use: `/Users/YourName/Projects/seedream-server/build/index.js`
+3. The full path will be something like: `/Users/YourName/Projects/seedream-fal-server`
+4. Use: `/Users/YourName/Projects/seedream-fal-server/build/index.js`
 
 **Alternative method (any OS):**
-1. Open the seedream-server folder in VS Code
+1. Open the seedream-fal-server folder in VS Code
 2. Right-click on the `build/index.js` file
 3. Select "Copy Path" or "Copy Absolute Path"
 4. Use this path in your configuration

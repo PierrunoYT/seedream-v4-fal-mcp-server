@@ -15,7 +15,7 @@ const __dirname = dirname(__filename);
 function getAbsolutePath() {
   const buildPath = join(__dirname, 'build', 'index.js');
   
-  console.log('🔍 SeedDream 3.0 MCP Server Path Helper\n');
+  console.log('🔍 SeedDream 3.0 FAL MCP Server Path Helper\n');
   
   if (!existsSync(buildPath)) {
     console.log('❌ Build file not found!');
@@ -28,7 +28,7 @@ function getAbsolutePath() {
   console.log(`   ${buildPath}\n`);
   
   console.log('📋 Copy this path and use it in your MCP configuration:');
-  console.log('   Replace "/absolute/path/to/seedream-server/build/index.js"');
+  console.log('   Replace "/absolute/path/to/seedream-fal-server/build/index.js"');
   console.log(`   With: "${buildPath}"\n`);
   
   // Show example config
