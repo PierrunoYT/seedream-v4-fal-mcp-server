@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Simple test script for the SeedDream 3.0 FAL MCP Server
+ * Simple test script for the SeedDream 4.0 FAL MCP Server
  * This script helps verify that the server is working correctly
  */
 
@@ -29,9 +29,10 @@ const testMessages = [
     params: {
       name: "generate_image",
       arguments: {
-        prompt: "a cute robot in a garden",
-        aspect_ratio: "1:1",
-        num_images: 1
+        prompt: "a cute robot in a futuristic garden",
+        image_size: "square_1280",
+        num_images: 1,
+        enable_safety_checker: true
       }
     }
   }
@@ -39,7 +40,7 @@ const testMessages = [
 ];
 
 async function testServer() {
-  console.log('Testing SeedDream 3.0 FAL MCP Server...\n');
+  console.log('Testing SeedDream 4.0 FAL MCP Server...\n');
 
   // Check if build exists
   const serverPath = join(__dirname, 'build', 'index.js');
@@ -84,7 +85,7 @@ async function testServer() {
     server.stderr.on('data', (data) => {
       const message = data.toString();
       if (message.includes('running on stdio')) {
-        console.log('✅ Server started successfully\n');
+        console.log('✅ SeedDream 4.0 server started successfully\n');
         
         // Send test messages
         testMessages.forEach((message, index) => {
@@ -112,6 +113,26 @@ async function testServer() {
         if (toolsResponse) {
           const tools = toolsResponse.result.tools;
           console.log(`\n📋 Available tools: ${tools.map(t => t.name).join(', ')}`);
+          
+          // Verify SeedDream 4.0 specific features
+          const generateImageTool = tools.find(t => t.name === 'generate_image');
+          if (generateImageTool) {
+            console.log('\n🔍 SeedDream 4.0 Features Detected:');
+            const schema = generateImageTool.inputSchema;
+            
+            if (schema.properties.image_size) {
+              console.log('   ✅ Flexible image sizing support');
+            }
+            if (schema.properties.max_images) {
+              console.log('   ✅ Multi-image generation support');
+            }
+            if (schema.properties.enable_safety_checker) {
+              console.log('   ✅ Safety checker support');
+            }
+            if (schema.properties.sync_mode) {
+              console.log('   ✅ Sync mode support');
+            }
+          }
         }
       } else {
         console.log('\n❌ No responses received from server');

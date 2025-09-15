@@ -15,7 +15,7 @@ const __dirname = dirname(__filename);
 function getAbsolutePath() {
   const buildPath = join(__dirname, 'build', 'index.js');
   
-  console.log('🔍 SeedDream 3.0 FAL MCP Server Path Helper\n');
+  console.log('🔍 SeedDream 4.0 FAL MCP Server Path Helper\n');
   
   if (!existsSync(buildPath)) {
     console.log('❌ Build file not found!');
@@ -23,19 +23,19 @@ function getAbsolutePath() {
     return;
   }
   
-  console.log('✅ Server build found!');
+  console.log('✅ SeedDream 4.0 server build found!');
   console.log('📁 Absolute path for MCP configuration:\n');
   console.log(`   ${buildPath}\n`);
   
   console.log('📋 Copy this path and use it in your MCP configuration:');
-  console.log('   Replace "/absolute/path/to/seedream-fal-server/build/index.js"');
+  console.log('   Replace "/absolute/path/to/seedream-v4-fal-server/build/index.js"');
   console.log(`   With: "${buildPath}"\n`);
   
   // Show example config
   console.log('📄 Example MCP configuration:');
   console.log(JSON.stringify({
     mcpServers: {
-      seedream: {
+      seedream4: {
         command: "node",
         args: [buildPath],
         env: {
@@ -44,6 +44,13 @@ function getAbsolutePath() {
       }
     }
   }, null, 2));
+  
+  console.log('\n🚀 SeedDream 4.0 Features:');
+  console.log('   • Advanced text-to-image generation');
+  console.log('   • Flexible image sizing (1024-4096px)');
+  console.log('   • Multi-image generation capabilities');
+  console.log('   • Enhanced safety checking');
+  console.log('   • Unified architecture for generation and editing');
 }
 
 getAbsolutePath();

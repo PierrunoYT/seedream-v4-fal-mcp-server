@@ -1,37 +1,43 @@
-# SeedDream 3.0 FAL MCP Server
+# SeedDream 4.0 FAL MCP Server
 
-A Model Context Protocol (MCP) server that provides image generation capabilities using Bytedance's SeedDream 3.0 model via the FAL AI platform.
+A Model Context Protocol (MCP) server that provides image generation capabilities using Bytedance's SeedDream 4.0 model via the FAL AI platform.
 
 ## Features
 
-SeedDream 3.0 is a bilingual (Chinese and English) text-to-image model that excels at:
+SeedDream 4.0 is a new-generation image creation model that integrates image generation and image editing capabilities into a single, unified architecture:
 
-- **Native 2K high resolution output** with various aspect ratios
-- **Exceptional text layout** for visually stunning results
-- **Accurate small and large text generation**
-- **Photorealistic portraits** with cinematic beauty
-- **Fast generation** (3 seconds for 1K images)
-- **Strong instruction following** and enhanced aesthetics
+- **Advanced Text-to-Image Generation** with improved quality and detail
+- **Flexible Image Sizing** from 1024x1024 to 4096x4096 pixels
+- **Multi-Image Generation** with configurable batch sizes
+- **Enhanced Safety Checking** to filter inappropriate content
+- **Unified Architecture** combining generation and editing capabilities
+- **High-Quality Output** with superior detail and coherence
+- **Fast Generation** with optimized processing
 
 ## Available Tools
 
 ### `generate_image`
-Generate a single image or multiple images from a text prompt.
+Generate single or multiple images from a text prompt using SeedDream 4.0.
 
 **Parameters:**
-- `prompt` (required): Text description of the image to generate (supports English and Chinese)
-- `aspect_ratio` (optional): Image aspect ratio - one of: `1:1`, `3:4`, `4:3`, `16:9`, `9:16`, `2:3`, `3:2`, `21:9` (default: `1:1`)
-- `guidance_scale` (optional): Controls prompt adherence (1.0-20.0, default: 2.5)
-- `num_images` (optional): Number of images to generate (1-4, default: 1)
-- `seed` (optional): Random seed for reproducible results (0-2147483647)
+- `prompt` (required): Text description of the image to generate
+- `image_size` (optional): Image dimensions - can be:
+  - **Presets**: `square_1024`, `square_1280`, `square_1536`, `portrait_1024`, `portrait_1280`, `landscape_1024`, `landscape_1280`, `wide_1024`, `tall_1024`
+  - **Custom**: `{width: number, height: number}` (1024-4096px range)
+  - Default: `square_1280` (1280x1280)
+- `num_images` (optional): Number of separate generations (1-6, default: 1)
+- `max_images` (optional): Maximum images per generation (1-6, default: 1)
+- `seed` (optional): Random seed for reproducible results
+- `sync_mode` (optional): Wait for upload before response (default: false)
+- `enable_safety_checker` (optional): Enable content filtering (default: true)
 
 ### `generate_image_batch`
 Generate multiple images with different prompts in a single request.
 
 **Parameters:**
 - `prompts` (required): Array of text prompts (1-5 prompts)
-- `aspect_ratio` (optional): Aspect ratio for all images (default: `1:1`)
-- `guidance_scale` (optional): Controls prompt adherence (1.0-20.0, default: 2.5)
+- `image_size` (optional): Size for all images (preset or custom, default: `square_1280`)
+- `enable_safety_checker` (optional): Enable safety checking (default: true)
 
 ## Installation
 
@@ -58,11 +64,11 @@ Add the server to your Claude Desktop configuration file:
 ```json
 {
   "mcpServers": {
-    "seedream": {
+    "seedream4": {
       "command": "npx",
       "args": [
         "-y",
-        "https://github.com/PierrunoYT/seedream-v3-fal-mcp-server.git"
+        "https://github.com/PierrunoYT/seedream-v4-fal-mcp-server.git"
       ],
       "env": {
         "FAL_KEY": "your-fal-api-key-here"
@@ -80,11 +86,11 @@ Add to your MCP settings file at:
 ```json
 {
   "mcpServers": {
-    "seedream": {
+    "seedream4": {
       "command": "npx",
       "args": [
         "-y",
-        "https://github.com/PierrunoYT/seedream-v3-fal-mcp-server.git"
+        "https://github.com/PierrunoYT/seedream-v4-fal-mcp-server.git"
       ],
       "env": {
         "FAL_KEY": "your-fal-api-key-here"
@@ -110,8 +116,8 @@ If you prefer to install locally:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/PierrunoYT/seedream-v3-fal-mcp-server.git
-   cd seedream-v3-fal-mcp-server
+   git clone https://github.com/PierrunoYT/seedream-v4-fal-mcp-server.git
+   cd seedream-v4-fal-mcp-server
    ```
 
 2. **Install dependencies**
@@ -128,9 +134,9 @@ If you prefer to install locally:
    ```json
    {
      "mcpServers": {
-       "seedream": {
+       "seedream4": {
          "command": "node",
-         "args": ["/absolute/path/to/seedream-v3-fal-mcp-server/build/index.js"],
+         "args": ["/absolute/path/to/seedream-v4-fal-mcp-server/build/index.js"],
          "env": {
            "FAL_KEY": "your-fal-api-key-here"
          }
@@ -150,48 +156,80 @@ Once configured, you can use the server through your MCP client:
 
 ### Basic Image Generation
 ```
-Generate an image of a serene mountain landscape at sunset with a lake reflection
+Generate an image of a futuristic cityscape at sunset with flying cars
 ```
 
-### Specific Aspect Ratio
+### Custom Image Size
 ```
-Create a portrait-oriented image of a futuristic cityscape (aspect ratio 9:16)
+Create a wide landscape image (1600x1280) of a serene mountain lake
 ```
 
 ### Multiple Images
 ```
-Generate 3 variations of a cute robot character
+Generate 3 variations of a cute robot character (num_images: 3)
+```
+
+### High-Resolution Generation
+```
+Create a detailed portrait in 1536x1536 resolution of a wise old wizard
 ```
 
 ### Batch Generation
 ```
-Generate images for these prompts: "a red rose", "a blue ocean", "a green forest"
+Generate images for these prompts: "a red rose in morning dew", "a blue ocean wave", "a green forest path"
 ```
 
-### Chinese Language Support
+### With Custom Parameters
 ```
-生成一张中国传统山水画的图片
+Generate a square image (1280x1280) of a magical forest with safety checker enabled and seed 12345
 ```
 
-### High Guidance for Precise Results
+### Sync Mode for Immediate Access
 ```
-Generate a photorealistic portrait of a person reading a book in a library (guidance scale: 7.5)
+Create an image of a space station with sync_mode enabled for immediate download
 ```
+
+## Image Size Presets
+
+SeedDream 4.0 supports the following preset sizes:
+
+- **Square Formats**:
+  - `square_1024`: 1024x1024
+  - `square_1280`: 1280x1280 (default)
+  - `square_1536`: 1536x1536
+
+- **Portrait Formats**:
+  - `portrait_1024`: 1024x1280
+  - `portrait_1280`: 1280x1600
+
+- **Landscape Formats**:
+  - `landscape_1024`: 1280x1024
+  - `landscape_1280`: 1600x1280
+
+- **Special Formats**:
+  - `wide_1024`: 1536x1024
+  - `tall_1024`: 1024x1536
+
+You can also specify custom dimensions with `{width: number, height: number}` where both values are between 1024 and 4096 pixels.
 
 ## API Response Format
 
 The server returns detailed information about generated images:
 
 ```
-Successfully generated 1 image(s) using SeedDream 3.0:
+Successfully generated 1 image(s) using SeedDream 4.0:
 
-Prompt: "a serene mountain landscape at sunset"
-Aspect Ratio: 1:1
-Guidance Scale: 2.5
+Prompt: "a futuristic cityscape at sunset"
+Image Size: 1280x1280
+Number of Images: 1
+Max Images per Generation: 1
+Safety Checker: Enabled
 Seed Used: 1234567890
 
 Generated Images:
-Image 1 (1024x1024): https://v3.fal.media/files/...
+Image 1 (1280x1280):
+  Local Path: ./images/seedream4_futuristic_cityscape_1234567890_1_2024-01-01T12-00-00-000Z.png
+  Original URL: https://storage.googleapis.com/falserverless/...
 ```
 
 ## Development
@@ -232,8 +270,13 @@ npm run inspector
    - Check your FAL AI account has sufficient credits
    - Verify your API key has the necessary permissions
    - Try with a simpler prompt to test connectivity
+   - Ensure image dimensions are within the 1024-4096 range
 
-4. **"npx command not found"**
+4. **"Invalid image size"**
+   - Use valid presets or ensure custom dimensions are between 1024-4096
+   - Check that width and height are both specified for custom sizes
+
+5. **"npx command not found"**
    - Ensure Node.js is properly installed
    - Try running `node --version` and `npm --version` to verify installation
 
@@ -243,6 +286,7 @@ npm run inspector
 ✅ **Graceful Shutdown**: Proper handling of SIGINT and SIGTERM signals
 ✅ **User-Friendly Messages**: Clear error messages with setup instructions
 ✅ **No More Crashes**: Eliminated `process.exit()` calls that caused connection drops
+✅ **Enhanced Validation**: Comprehensive input validation for all parameters
 
 ### Debug Logging
 
@@ -250,7 +294,29 @@ The server outputs debug information to stderr, which can help diagnose issues:
 - Generation progress updates
 - Error messages with helpful instructions
 - API call details
+- Image download status
 - Graceful shutdown notifications
+
+## What's New in SeedDream 4.0
+
+### Improvements over SeedDream 3.0
+
+- **Unified Architecture**: Combines generation and editing in one model
+- **Enhanced Quality**: Improved image detail and coherence
+- **Flexible Sizing**: Support for custom dimensions up to 4096px
+- **Multi-Image Generation**: Better control over batch generation
+- **Advanced Safety**: Enhanced content filtering capabilities
+- **Better Performance**: Optimized generation pipeline
+
+### Migration from SeedDream 3.0
+
+If you're upgrading from SeedDream 3.0:
+
+1. **API Endpoint**: Now uses `fal-ai/bytedance/seedream/v4/text-to-image`
+2. **Aspect Ratios**: Replaced with flexible `image_size` parameter
+3. **New Parameters**: Added `max_images`, `sync_mode`, `enable_safety_checker`
+4. **Size Limits**: Expanded from 2K to 4K maximum resolution
+5. **Presets**: New convenient size presets for common use cases
 
 ## Pricing
 
@@ -273,11 +339,21 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 For issues related to:
 - **This MCP server**: Open an issue in this repository
 - **FAL AI API**: Contact FAL AI support
-- **SeedDream 3.0 model**: Refer to FAL AI documentation
+- **SeedDream 4.0 model**: Refer to FAL AI documentation
 
 ## Changelog
 
-### v0.1.1 (Latest)
+### v0.2.0 (Latest - SeedDream 4.0)
+- **🚀 Upgraded to SeedDream 4.0**: New unified architecture for generation and editing
+- **📐 Flexible Image Sizing**: Support for custom dimensions up to 4096x4096
+- **🎯 Enhanced Presets**: 9 convenient size presets for common use cases
+- **🔒 Advanced Safety**: Improved content filtering with configurable safety checker
+- **⚡ Multi-Image Generation**: Better control with `num_images` and `max_images`
+- **🔄 Sync Mode**: Option for immediate image access without CDN delays
+- **🛡️ Enhanced Validation**: Comprehensive input validation for all parameters
+- **📊 Better Responses**: More detailed generation information and status
+
+### v0.1.1 (SeedDream 3.0)
 - **🔧 Fixed connection drops**: Removed `process.exit()` calls that caused server crashes
 - **🛡️ Improved error handling**: Server continues running even without API token
 - **🌍 Added portability**: npx configuration works on any machine
@@ -285,8 +361,8 @@ For issues related to:
 - **💬 Better user experience**: Clear error messages with setup instructions
 - **🔄 Auto-updating**: npx pulls latest version from GitHub automatically
 
-### v0.1.0
-- Initial release
+### v0.1.0 (SeedDream 3.0)
+- Initial release with SeedDream 3.0
 - Support for single and batch image generation
 - Bilingual prompt support (English/Chinese)
 - Multiple aspect ratios

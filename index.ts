@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * SeedDream 3.0 FAL MCP Server
+ * SeedDream 4.0 FAL MCP Server
  * 
- * This MCP server provides image generation capabilities using Bytedance's SeedDream 3.0 model
- * via the FAL AI platform. SeedDream 3.0 is a bilingual (Chinese and English) text-to-image 
- * model that excels at:
+ * This MCP server provides image generation capabilities using Bytedance's SeedDream 4.0 model
+ * via the FAL AI platform. SeedDream 4.0 is a new-generation image creation model that 
+ * integrates image generation and image editing capabilities into a single, unified architecture.
  * 
- * - Native 2K high resolution output with various aspect ratios
- * - Exceptional text layout for visually stunning results
- * - Accurate small and large text generation
- * - Photorealistic portraits with cinematic beauty
- * - Fast generation (3 seconds for 1K images)
- * - Strong instruction following and enhanced aesthetics
+ * Key Features:
+ * - Advanced text-to-image generation with improved quality
+ * - Flexible image sizing (1024x1024 to 4096x4096)
+ * - Multi-image generation capabilities
+ * - Enhanced safety checking
+ * - Unified architecture for generation and editing
  */
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -44,28 +44,38 @@ if (!FAL_KEY) {
   falClient = fal;
 }
 
-// Valid aspect ratios for SeedDream 3.0
-const VALID_ASPECT_RATIOS = [
-  "1:1", "3:4", "4:3", "16:9", "9:16", "2:3", "3:2", "21:9"
-] as const;
+// Valid image size presets for SeedDream 4.0
+const VALID_IMAGE_SIZES = {
+  "square_1024": { width: 1024, height: 1024 },
+  "square_1280": { width: 1280, height: 1280 },
+  "square_1536": { width: 1536, height: 1536 },
+  "portrait_1024": { width: 1024, height: 1280 },
+  "portrait_1280": { width: 1280, height: 1600 },
+  "landscape_1024": { width: 1280, height: 1024 },
+  "landscape_1280": { width: 1600, height: 1280 },
+  "wide_1024": { width: 1536, height: 1024 },
+  "tall_1024": { width: 1024, height: 1536 }
+} as const;
 
-type AspectRatio = typeof VALID_ASPECT_RATIOS[number];
+type ImageSizePreset = keyof typeof VALID_IMAGE_SIZES;
 
 /**
- * Interface for SeedDream 3.0 generation parameters
+ * Interface for SeedDream 4.0 generation parameters
  */
-interface SeedDreamParams {
+interface SeedDream4Params {
   prompt: string;
-  aspect_ratio?: AspectRatio;
-  guidance_scale?: number;
+  image_size?: { width: number; height: number } | ImageSizePreset;
   num_images?: number;
+  max_images?: number;
   seed?: number;
+  sync_mode?: boolean;
+  enable_safety_checker?: boolean;
 }
 
 /**
- * Interface for SeedDream 3.0 API response
+ * Interface for SeedDream 4.0 API response
  */
-interface SeedDreamResponse {
+interface SeedDream4Response {
   images: Array<{
     url: string;
     width?: number;
@@ -126,7 +136,31 @@ function generateImageFilename(prompt: string, index: number, seed: number): str
     .substring(0, 50);
   
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  return `seedream_${safePrompt}_${seed}_${index}_${timestamp}.png`;
+  return `seedream4_${safePrompt}_${seed}_${index}_${timestamp}.png`;
+}
+
+/**
+ * Resolve image size parameter to width/height object
+ */
+function resolveImageSize(imageSize?: { width: number; height: number } | ImageSizePreset): { width: number; height: number } {
+  if (!imageSize) {
+    return { width: 1280, height: 1280 }; // Default size
+  }
+  
+  if (typeof imageSize === 'string') {
+    const preset = VALID_IMAGE_SIZES[imageSize];
+    if (!preset) {
+      throw new Error(`Invalid image size preset: ${imageSize}. Valid presets: ${Object.keys(VALID_IMAGE_SIZES).join(', ')}`);
+    }
+    return preset;
+  }
+  
+  // Validate custom dimensions
+  if (imageSize.width < 1024 || imageSize.width > 4096 || imageSize.height < 1024 || imageSize.height > 4096) {
+    throw new Error("Image dimensions must be between 1024 and 4096 pixels");
+  }
+  
+  return imageSize;
 }
 
 /**
@@ -134,8 +168,8 @@ function generateImageFilename(prompt: string, index: number, seed: number): str
  */
 const server = new Server(
   {
-    name: "seedream-fal-server",
-    version: "0.1.0",
+    name: "seedream-v4-fal-server",
+    version: "0.2.0",
   },
   {
     capabilities: {
@@ -152,39 +186,71 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: "generate_image",
-        description: "Generate images using Bytedance's SeedDream 3.0 model. Supports bilingual prompts (Chinese and English), high-resolution output, and various aspect ratios.",
+        description: "Generate images using Bytedance's SeedDream 4.0 model. A new-generation image creation model that integrates image generation and image editing capabilities into a single, unified architecture.",
         inputSchema: {
           type: "object",
           properties: {
             prompt: {
               type: "string",
-              description: "The text prompt used to generate the image. Supports both English and Chinese. Be descriptive for best results."
+              description: "The text prompt used to generate the image. Be descriptive for best results."
             },
-            aspect_ratio: {
-              type: "string",
-              enum: VALID_ASPECT_RATIOS,
-              description: "The aspect ratio of the generated image",
-              default: "1:1"
-            },
-            guidance_scale: {
-              type: "number",
-              description: "Controls how closely the output image aligns with the input prompt. Higher values mean stronger prompt correlation.",
-              minimum: 1.0,
-              maximum: 20.0,
-              default: 2.5
+            image_size: {
+              oneOf: [
+                {
+                  type: "string",
+                  enum: Object.keys(VALID_IMAGE_SIZES),
+                  description: "Preset image size"
+                },
+                {
+                  type: "object",
+                  properties: {
+                    width: {
+                      type: "integer",
+                      minimum: 1024,
+                      maximum: 4096,
+                      description: "Image width in pixels"
+                    },
+                    height: {
+                      type: "integer",
+                      minimum: 1024,
+                      maximum: 4096,
+                      description: "Image height in pixels"
+                    }
+                  },
+                  required: ["width", "height"],
+                  description: "Custom image dimensions"
+                }
+              ],
+              description: "The size of the generated image. Can be a preset or custom dimensions (1024-4096px)",
+              default: "square_1280"
             },
             num_images: {
               type: "integer",
-              description: "Number of images to generate",
+              description: "Number of separate model generations to be run with the prompt",
               minimum: 1,
-              maximum: 4,
+              maximum: 6,
+              default: 1
+            },
+            max_images: {
+              type: "integer",
+              description: "Maximum images per generation. Total images will be between num_images and max_images*num_images",
+              minimum: 1,
+              maximum: 6,
               default: 1
             },
             seed: {
               type: "integer",
-              description: "Random seed to control the stochasticity of image generation. Use the same seed for reproducible results.",
-              minimum: 0,
-              maximum: 2147483647
+              description: "Random seed to control the stochasticity of image generation. Use the same seed for reproducible results."
+            },
+            sync_mode: {
+              type: "boolean",
+              description: "If true, waits for image generation and upload before returning response (higher latency but direct access)",
+              default: false
+            },
+            enable_safety_checker: {
+              type: "boolean",
+              description: "Enable safety checker to filter inappropriate content",
+              default: true
             }
           },
           required: ["prompt"]
@@ -192,7 +258,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "generate_image_batch",
-        description: "Generate multiple images with different prompts in a single request using SeedDream 3.0.",
+        description: "Generate multiple images with different prompts in a single request using SeedDream 4.0.",
         inputSchema: {
           type: "object",
           properties: {
@@ -205,18 +271,37 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               minItems: 1,
               maxItems: 5
             },
-            aspect_ratio: {
-              type: "string",
-              enum: VALID_ASPECT_RATIOS,
-              description: "The aspect ratio for all generated images",
-              default: "1:1"
+            image_size: {
+              oneOf: [
+                {
+                  type: "string",
+                  enum: Object.keys(VALID_IMAGE_SIZES),
+                  description: "Preset image size"
+                },
+                {
+                  type: "object",
+                  properties: {
+                    width: {
+                      type: "integer",
+                      minimum: 1024,
+                      maximum: 4096
+                    },
+                    height: {
+                      type: "integer",
+                      minimum: 1024,
+                      maximum: 4096
+                    }
+                  },
+                  required: ["width", "height"]
+                }
+              ],
+              description: "The size for all generated images",
+              default: "square_1280"
             },
-            guidance_scale: {
-              type: "number",
-              description: "Controls how closely the output images align with the input prompts",
-              minimum: 1.0,
-              maximum: 20.0,
-              default: 2.5
+            enable_safety_checker: {
+              type: "boolean",
+              description: "Enable safety checker for all generations",
+              default: true
             }
           },
           required: ["prompts"]
@@ -243,41 +328,41 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
 
-        const params = (request.params.arguments || {}) as unknown as SeedDreamParams;
+        const params = (request.params.arguments || {}) as unknown as SeedDream4Params;
         
         if (!params.prompt || typeof params.prompt !== 'string') {
           throw new Error("Prompt is required and must be a string");
         }
 
-        // Validate aspect ratio if provided
-        if (params.aspect_ratio && !VALID_ASPECT_RATIOS.includes(params.aspect_ratio)) {
-          throw new Error(`Invalid aspect ratio. Must be one of: ${VALID_ASPECT_RATIOS.join(', ')}`);
-        }
+        // Resolve image size
+        const imageSize = resolveImageSize(params.image_size);
 
         // Prepare the request payload
         const payload: any = {
           prompt: params.prompt,
-          aspect_ratio: params.aspect_ratio || "1:1",
-          guidance_scale: params.guidance_scale || 2.5,
-          num_images: params.num_images || 1
+          image_size: imageSize,
+          num_images: params.num_images || 1,
+          max_images: params.max_images || 1,
+          sync_mode: params.sync_mode || false,
+          enable_safety_checker: params.enable_safety_checker !== false
         };
 
         if (params.seed !== undefined) {
           payload.seed = params.seed;
         }
 
-        console.error(`Generating image with prompt: "${params.prompt}"`);
+        console.error(`Generating image with SeedDream 4.0: "${params.prompt}"`);
         
-        // Call the SeedDream 3.0 API
-        const result = await falClient.subscribe("fal-ai/bytedance/seedream/v3/text-to-image", {
+        // Call the SeedDream 4.0 API
+        const result = await falClient.subscribe("fal-ai/bytedance/seedream/v4/text-to-image", {
           input: payload,
           logs: true,
           onQueueUpdate: (update) => {
             if (update.status === "IN_PROGRESS") {
-              update.logs?.map((log) => log.message).forEach(msg => console.error(`[SeedDream] ${msg}`));
+              update.logs?.map((log) => log.message).forEach(msg => console.error(`[SeedDream 4.0] ${msg}`));
             }
           },
-        }) as { data: SeedDreamResponse };
+        }) as { data: SeedDream4Response };
 
         const response = result.data;
         
@@ -295,7 +380,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           
           try {
             const localPath = await downloadImage(img.url, filename);
-            const dimensions = img.width && img.height ? ` (${img.width}x${img.height})` : '';
+            const dimensions = img.width && img.height ? ` (${img.width}x${img.height})` : ` (${imageSize.width}x${imageSize.height})`;
             downloadedImages.push({
               url: img.url,
               localPath,
@@ -308,7 +393,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             downloadedImages.push({
               url: img.url,
               localPath: `Failed to download: ${downloadError instanceof Error ? downloadError.message : 'Unknown error'}`,
-              dimensions: img.width && img.height ? ` (${img.width}x${img.height})` : ''
+              dimensions: img.width && img.height ? ` (${img.width}x${img.height})` : ` (${imageSize.width}x${imageSize.height})`
             });
           }
         }
@@ -324,11 +409,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: "text",
-              text: `Successfully generated ${response.images.length} image(s) using SeedDream 3.0:
+              text: `Successfully generated ${response.images.length} image(s) using SeedDream 4.0:
 
 Prompt: "${params.prompt}"
-Aspect Ratio: ${payload.aspect_ratio}
-Guidance Scale: ${payload.guidance_scale}
+Image Size: ${imageSize.width}x${imageSize.height}
+Number of Images: ${payload.num_images}
+Max Images per Generation: ${payload.max_images}
+Safety Checker: ${payload.enable_safety_checker ? 'Enabled' : 'Disabled'}
 Seed Used: ${response.seed}
 
 Generated Images:
@@ -365,10 +452,10 @@ Images have been downloaded to the local 'images' directory. You can find them a
           };
         }
 
-        const { prompts, aspect_ratio = "1:1", guidance_scale = 2.5 } = request.params.arguments as {
+        const { prompts, image_size, enable_safety_checker = true } = request.params.arguments as {
           prompts: string[];
-          aspect_ratio?: AspectRatio;
-          guidance_scale?: number;
+          image_size?: { width: number; height: number } | ImageSizePreset;
+          enable_safety_checker?: boolean;
         };
 
         if (!Array.isArray(prompts) || prompts.length === 0) {
@@ -379,27 +466,26 @@ Images have been downloaded to the local 'images' directory. You can find them a
           throw new Error("Maximum 5 prompts allowed per batch request");
         }
 
-        // Validate aspect ratio
-        if (!VALID_ASPECT_RATIOS.includes(aspect_ratio)) {
-          throw new Error(`Invalid aspect ratio. Must be one of: ${VALID_ASPECT_RATIOS.join(', ')}`);
-        }
+        // Resolve image size
+        const imageSize = resolveImageSize(image_size);
 
-        console.error(`Generating batch of ${prompts.length} images`);
+        console.error(`Generating batch of ${prompts.length} images with SeedDream 4.0`);
 
         // Generate images for each prompt
         const results = await Promise.allSettled(
           prompts.map(async (prompt, index) => {
             console.error(`Generating image ${index + 1}/${prompts.length}: "${prompt}"`);
             
-            const result = await falClient.subscribe("fal-ai/bytedance/seedream/v3/text-to-image", {
+            const result = await falClient.subscribe("fal-ai/bytedance/seedream/v4/text-to-image", {
               input: {
                 prompt,
-                aspect_ratio,
-                guidance_scale,
-                num_images: 1
+                image_size: imageSize,
+                num_images: 1,
+                max_images: 1,
+                enable_safety_checker
               },
               logs: false
-            }) as { data: SeedDreamResponse };
+            }) as { data: SeedDream4Response };
 
             return {
               prompt,
@@ -424,11 +510,11 @@ Images have been downloaded to the local 'images' directory. You can find them a
         });
 
         // Format response
-        let responseText = `Batch image generation completed using SeedDream 3.0:
+        let responseText = `Batch image generation completed using SeedDream 4.0:
 
 Settings:
-- Aspect Ratio: ${aspect_ratio}
-- Guidance Scale: ${guidance_scale}
+- Image Size: ${imageSize.width}x${imageSize.height}
+- Safety Checker: ${enable_safety_checker ? 'Enabled' : 'Disabled'}
 - Total Prompts: ${prompts.length}
 - Successful: ${successful.length}
 - Failed: ${failed.length}
@@ -506,7 +592,7 @@ Settings:
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("SeedDream 3.0 FAL MCP server running on stdio");
+  console.error("SeedDream 4.0 FAL MCP server running on stdio");
 }
 
 // Graceful shutdown handlers

@@ -4,6 +4,8 @@
 
 The Model Context Protocol (MCP) is an open standard that enables AI applications to securely connect to data sources and tools. Think of MCP like a USB-C port for AI applications - it provides a standardized way for LLMs to access external resources.
 
+> **Example Implementation**: This repository includes a complete SeedDream 4.0 MCP server that demonstrates advanced image generation capabilities using Bytedance's latest model via FAL AI.
+
 ## Core MCP Concepts
 
 MCP servers can provide three main types of capabilities:
